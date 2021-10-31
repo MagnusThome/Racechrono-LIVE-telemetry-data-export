@@ -2,7 +2,7 @@
 
 An example how to use the "Monitor" API in Racechrono to get a live feed of any of all data Racechrono holds using <a target=_blank href=https://github.com/MagnusThome/RejsaCAN-ESP32>a RejsaCAN board</a> (or any board based on an ESP32 or NRF52 MCU) to get a live feed of data from Racechrono over Bluetooth.
 
-This code is made for a commonly available ILI9341 based display simply connected via SPI:
+This example code is made for a commonly available ILI9341 based display simply connected via SPI:
 
 ![138956181-5c421461-7e94-4a66-8d21-c0f54506565e](https://user-images.githubusercontent.com/32169384/139599606-2ad71cbc-2545-4b49-b409-847e96763dfc.png)
 
