@@ -26,7 +26,7 @@ struct strmon monitors[] = {
     {"y_magnetic_field", "channel(device(magn), y_magnetic_field)", 1.0}
 #else
     {"Time Delta",        "channel(device(lap), delta_lap_time)*10.0", 0.1},
-    {"Speed Gain",       "channel(device(gps), delta_speed)*10.0", 0.1}
+    {"Speed Delta",       "channel(device(gps), delta_speed)*10.0", 0.1}
 #endif
 };
 
