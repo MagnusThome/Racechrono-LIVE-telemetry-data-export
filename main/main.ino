@@ -9,7 +9,7 @@
 
 // ESP32 SPI: 
 // MISO  GPIO19
-// MOSI  GPIO19
+// MOSI  GPIO23
 // CLK   GPIO18
 // SS    GPIO5
 #define TFT_CS 5
