@@ -2,7 +2,7 @@
 #include "rcmonitor.h"
 
 #ifdef ESP32
-  #include <NimBLEDevice.h>
+  #include <NimBLEDevice.h>  // NOTE!!! Version 1.4.3 of NimBLE
 #else
   #include <bluefruit.h>
 #endif
@@ -382,3 +382,4 @@ boolean rcmonitor() {
 
 
 // end 
+
