@@ -68,9 +68,6 @@ Afterwards, set `TEST_MODE` back to `0`, upload again, and remove the test rows 
 
 ##  
 
-<a href="https://www.youtube.com/watch?v=f61Pw1ZjPyw"><img src=https://user-images.githubusercontent.com/32169384/139599643-c06efdc9-39f7-4c51-9084-7b14ee37d968.png></a>
-
-
 More info here:
 https://racechrono.com/forum/
 
