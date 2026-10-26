@@ -1,3 +1,7 @@
+// Built and tested with ESP32 Arduino core 3.3.x and NimBLE-Arduino 2.5.2.
+// Do not use core 4.0.0-RC1 on ESP32-S3: it crashes at startup in the
+// Bluetooth controller (see the README).
+
 #include <Arduino.h>
 #include "rcmonitor.h"
 
