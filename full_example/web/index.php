@@ -71,10 +71,7 @@ if (is_file($csvFile) && ($fp = fopen($csvFile, 'r')) !== false) {
     fclose($fp);
 }
 
-$total  = count($rows);
-$latest = $total > 0 ? $rows[$total - 1] : null;
-
-$lastUpdate = $latest !== null ? parse_log_time($latest[0]) : null;
+$total = count($rows);
 
 /** The log stores "Ymd H:i:s"; turn that into a DateTime (null if unparseable). */
 function parse_log_time(string $raw): ?DateTime
@@ -125,18 +122,16 @@ function fmt_cell(string $value, int $decimals = 0): string
     return number_format((float) $value, $decimals, '.', '');
 }
 
-/** Like fmt_cell(), but an empty value stays empty instead of showing a dash. */
-function fmt_optional(string $value, int $decimals = 0): string
+/**
+ * A temperature with its unit, written the SI way: number, non-breaking space,
+ * then "°C" (degree sign + C, rather than the single ℃ character, which
+ * Unicode keeps only for compatibility). A missing value stays a plain dash.
+ */
+function fmt_temp(string $value): string
 {
-    $value = trim($value);
-    if ($value === '') {
-        return '';
-    }
-    if (!is_numeric($value)) {
-        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-    }
+    $cell = fmt_cell($value);
 
-    return number_format((float) $value, $decimals, '.', '');
+    return is_numeric(trim($value)) ? $cell . '&nbsp;°C' : $cell;
 }
 
 function e(string $value): string
@@ -150,26 +145,8 @@ function is_test_row(array $row): bool
     return trim($row[5]) === '1';
 }
 
-// ---------------------------------------------------------------------------
-// Laps. Each row is one completed lap, so there is nothing to collapse. Rows
-// from before the logger was changed to lap-only still have empty lap fields;
-// those are counted separately and shown as a dash. Runs in log order, so the
-// last lap found is the newest one.
-// ---------------------------------------------------------------------------
-$lapCount = 0;      // rows that actually carry a completed lap
-$lastLap  = null;   // ['number' => string, 'time' => string]
-
-foreach ($rows as $row) {
-    $number = trim($row[3]);
-    if ($number === '') {
-        continue;
-    }
-    $lapCount++;
-    if (trim($row[4]) !== '') {
-        $lastLap = ['number' => $number, 'time' => trim($row[4]), 'test' => is_test_row($row)];
-    }
-}
-
+// Each row is one completed lap. Rows from before the logger was changed to
+// lap-only have empty lap fields and are shown with a dash.
 $displayRows = array_reverse($rows, true);   // newest first, original indexes kept
 
 $banner = '';
@@ -201,7 +178,6 @@ if (isset($_GET['cleared'])) {
         --text: #e8edf3;
         --muted: #8b98a9;
         --accent: #4da3ff;
-        --ok: #34c759;
         --warn: #ff9f0a;
         --err: #ff453a;
     }
@@ -224,21 +200,8 @@ if (isset($_GET['cleared'])) {
         flex-wrap: wrap;
         gap: 16px;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-end;
         margin-bottom: 14px;
-    }
-    .status {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        align-items: center;
-        color: var(--muted);
-        font-size: .85rem;
-    }
-    .lapchip {
-        color: var(--accent);
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
     }
     .actions { display: flex; gap: 8px; align-items: center; }
     .tag {
@@ -255,16 +218,6 @@ if (isset($_GET['cleared'])) {
         text-transform: uppercase;
         vertical-align: middle;
     }
-    .dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
-    .dot.ok   { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-    .dot.err  { background: var(--err); }
     .btn {
         appearance: none;
         border: 1px solid var(--line);
@@ -369,23 +322,6 @@ if (isset($_GET['cleared'])) {
 <?php endif; ?>
 
 <div class="bar">
-    <div class="status">
-<?php if ($latest === null): ?>
-        <span><span class="dot err"></span>No laps logged yet</span>
-<?php else: ?>
-        <span><span class="dot ok"></span><?= $lapCount ?> <?= $lapCount === 1 ? 'lap' : 'laps' ?> logged</span>
-<?php endif; ?>
-<?php if ($lastLap !== null): ?>
-        <span class="lapchip">Last lap <?= e(fmt_optional($lastLap['number'], 0)) ?> · <?= e(fmt_lap_time($lastLap['time'])) ?><?php if ($lastLap['test']): ?><span class="tag">test</span><?php endif; ?></span>
-<?php endif; ?>
-<?php if ($lastUpdate !== null): ?>
-        <span>Last logged: <?= $lastUpdate->format('Y-m-d H:i:s') ?></span>
-<?php endif; ?>
-<?php if ($refreshSeconds > 0): ?>
-        <span>Auto-refresh: <?= (int) $refreshSeconds ?>s</span>
-<?php endif; ?>
-    </div>
-
     <div class="actions">
 <?php if ($confirmClear && $total > 0): ?>
         <form class="confirm" method="post" action="<?= e(basename(__FILE__)) ?>">
@@ -426,8 +362,8 @@ if (isset($_GET['cleared'])) {
             <tr>
                 <td><?php if (is_test_row($row)): ?><span class="tag">test</span> <?php endif; ?><?= fmt_cell($row[3]) ?></td>
                 <td><?= trim($row[4]) === '' ? '—' : e(fmt_lap_time($row[4])) ?></td>
-                <td><?= fmt_cell($row[1]) ?></td>
-                <td><?= fmt_cell($row[2]) ?></td>
+                <td><?= fmt_temp($row[1]) ?></td>
+                <td><?= fmt_temp($row[2]) ?></td>
                 <td><?= e(fmt_time($row[0])) ?></td>
             </tr>
 <?php endforeach; ?>

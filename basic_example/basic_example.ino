@@ -31,9 +31,11 @@ void setup() {
 void loop() {
   static float engine_oil_temp;
   static float coolant_temp;
-  if( rcmonitor() ) {
-    engine_oil_temp   = (monitorValues[0] * monitorMultipliers[0]);
-    coolant_temp      = (monitorValues[1] * monitorMultipliers[1]);
+  // rcmonitor() is true once the app has accepted the monitors; the values
+  // themselves may take a moment longer to arrive.
+  if( rcmonitor() && rcmonitorHasValue(0) && rcmonitorHasValue(1) ) {
+    engine_oil_temp   = rcmonitorValue(0);
+    coolant_temp      = rcmonitorValue(1);
     snprintf( buff, BUFFSIZE, "http://www.mywebserversomewhere.com/somepath/update.php?engine_oil_temp=%f&coolant_temp=%f", engine_oil_temp, coolant_temp ); 
     http.begin(buff); 
     http.GET();

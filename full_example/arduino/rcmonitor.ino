@@ -339,6 +339,11 @@ class monitorServerCallbacks: public NimBLEServerCallbacks {
         (void) connInfo;
         (void) reason;
         configIndicateEnabled = false;
+#if CONFIG_BT_NIMBLE_EXT_ADV
+        // advertiseOnDisconnect() has no effect with extended advertising, so
+        // advertising is restarted here instead.
+        NimBLEDevice::getAdvertising()->start(0);
+#endif
     };
 };
 
@@ -421,9 +426,12 @@ void bluetoothStart(void) {
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
     pServer = NimBLEDevice::createServer();
     pServer->setCallbacks(&cbmonitorServerCallbacks, false);  // static, never delete it
+#if !CONFIG_BT_NIMBLE_EXT_ADV
     // Off by default in NimBLE 2.x; without it the app cannot find the device
-    // again after the first disconnect.
+    // again after the first disconnect. With extended advertising this does not
+    // exist, and onDisconnect() restarts advertising instead.
     pServer->advertiseOnDisconnect(true);
+#endif
     NimBLEService* pMainService = pServer->createService(MAIN_SERVICE_NAME);
   
     monitorConfigCharacteristic = pMainService->createCharacteristic( 
@@ -440,19 +448,37 @@ void bluetoothStart(void) {
                 );
     monitorNotificationCharacteristic->setCallbacks(&cbmonitorNotificationWriteCallback);
     
-    NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     // Native order is least significant byte first, so these are the last two
     // bytes of the printed address; the first ones are the same Espressif
     // vendor prefix on every board.
     const uint8_t* mac = NimBLEDevice::getAddress().getVal();
     char name[255];
     snprintf(name, sizeof(name), "RC DIY #%02X%02X", mac[1], mac[0]);
+
+#if CONFIG_BT_NIMBLE_EXT_ADV
+    // Bluetooth 5 builds (for example ESP32-S3 on ESP32 core 4.x) only have the
+    // extended advertising API. It is used for plain legacy advertising here,
+    // which is what phones scan for. Flags, service and name fit in one packet.
+    NimBLEExtAdvertisement advertisement;
+    advertisement.setLegacyAdvertising(true);
+    advertisement.setConnectable(true);
+    advertisement.setFlags(BLE_HS_ADV_F_DISC_GEN);
+    advertisement.addServiceUUID(pMainService->getUUID());
+    advertisement.setName(name);
+    advertisement.setMinInterval(160);
+    advertisement.setMaxInterval(160);
+    NimBLEExtAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+    pAdvertising->setInstanceData(0, advertisement);
+    pAdvertising->start(0);
+#else
+    NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->setName(name);
     pAdvertising->setMinInterval(160);
     pAdvertising->setMaxInterval(160);
     pAdvertising->addServiceUUID(pMainService->getUUID());
     pAdvertising->enableScanResponse(true);
     pAdvertising->start();
+#endif
 }
 
 

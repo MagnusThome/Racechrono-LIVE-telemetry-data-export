@@ -21,4 +21,21 @@ struct strmon {
 void rcmonitorstart(void);
 boolean rcmonitor(void);
 
+// Number of monitors that were configured successfully.
+static inline uint8_t rcmonitorCount(void) {
+    return activeMonitors;
+}
+
+// A monitor keeps INVALID_VALUE until the app has sent a value for it, which
+// can take a lap or more for things like lap times.
+static inline boolean rcmonitorHasValue(uint8_t monitorId) {
+    return monitorId < activeMonitors && monitorValues[monitorId] != INVALID_VALUE;
+}
+
+// Raw integer scaled back to engineering units. Only meaningful when
+// rcmonitorHasValue() is true for the same id.
+static inline float rcmonitorValue(uint8_t monitorId) {
+    return (float) monitorValues[monitorId] * monitorMultipliers[monitorId];
+}
+
 #endif
