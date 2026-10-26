@@ -6,6 +6,64 @@ An example how to use the "Monitor" API in Racechrono to get a live feed of any 
 
 The list of data that you can get live from Racechrono is huge! Any OBD2 data, any laptiming data, GPS, CAN, yeah ANY data Racechrono collects is available to collect live over BLE Bluetooth while out on the track. This specific example code will upload data to a web server. It's easy to add any of all the data available. Then add your code for what to do with the data/information. Show for example drive train vitals and the current sector times on a large screen in the pits? Or issue an alarm that goes of in the car or in the pits if the oil or tire temps are too high? An automatic email sent to your friends each time you set a new track PB hehehe. The possibilities are endless.  
 
+# How it works  
+
+RaceChrono (phone) → Bluetooth LE → ESP32 → WiFi → `update.php` on your web server → `datalog.csv` → `index.php` web page.  
+
+The ESP32 asks RaceChrono for engine oil temperature, coolant temperature and the number and time of the last completed lap. Each time a lap is completed, it uploads one row. Laps are queued on the device and retried until the server has accepted them, so a WiFi dropout only delays them. The web page shows the laps, newest first, and refreshes itself every few seconds.  
+
+# Install  
+
+You need:  
+- An ESP32 board, for example a RejsaCAN board.  
+- RaceChrono on your phone.  
+- WiFi for the ESP32 at the track, for example a phone hotspot.  
+- A web server with PHP 7.4 or newer.  
+
+## 1. Choose a secret key  
+
+Pick a key of letters and digits only. The device sends it with every lap, and the web page asks for it before clearing the log. The same key goes in both config files below.  
+
+## 2. Web server  
+
+1. Copy `update.php`, `index.php` and `config.php` to a folder on your web server. The web server only needs to read these files, so don't give it write access to that folder.  
+2. Create a separate folder for the log file and make it writable by the web server. Put it outside the web root if you can, so the log can't be downloaded directly. For example, on Linux with Apache or nginx running as `www-data`:  
+   ```
+   mkdir /home/me/racechrono-data
+   sudo chown www-data /home/me/racechrono-data
+   ```
+3. Edit `config.php`:  
+   - `$secretKey`: your key. Nothing is accepted while it is still `xxxxxxxxxxxxxxxx`.  
+   - `$dataDir`: the server path of the log folder, for example `/home/me/racechrono-data`. This is a path on the server's disk, not a URL.  
+   - `$timezone`: the timezone for the timestamps in the log, for example `Europe/Stockholm`.  
+4. Open `index.php` in a browser. It should say that no laps have been logged yet.  
+
+## 3. ESP32  
+
+1. In the Arduino IDE, install the ESP32 boards (Boards Manager → "esp32" by Espressif) and the library **NimBLE-Arduino version 2.x** (Library Manager). Version 1.x will not compile.  
+2. Open `main/main.ino` and edit `main/config.h`:  
+   - `ssid` and `password`: the WiFi the ESP32 should use.  
+   - `updateUrl`: the web address of `update.php`, for example `http://www.example.com/racechrono/update.php`. The key is sent as part of this address, so use `https://` if your server supports it.  
+   - `uploadKey`: your key, the same as `$secretKey` in `config.php`.  
+3. Select your board under Tools → Board. On a plain ESP32 the sketch fills almost all of the default program space, so also choose Tools → Partition Scheme → **Huge APP**.  
+4. Upload, and open the Serial Monitor at 115200 baud to follow what the device does.  
+
+## 4. RaceChrono  
+
+Add the ESP32 as a DIY Bluetooth device in RaceChrono's device settings. It shows up as **RC DIY #xxxx**, where xxxx is the end of the board's Bluetooth address. When RaceChrono connects, the Serial Monitor prints `Configuring... Done`.  
+
+The temperatures come from RaceChrono's OBD-II connection, so RaceChrono also needs an OBD-II reader connected to the car. Lap numbers and times need lap timing on a track in RaceChrono.  
+
+## 5. Test without driving  
+
+Set `#define TEST_MODE 1` in `main/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
+- **200**: stored. The row appears on the web page with a TEST tag.  
+- **403**: the keys in `config.h` and `config.php` don't match.  
+- **500**: the server can't write to `$dataDir`.  
+- **-1** or another negative number: no connection to the server. Check the WiFi details and `updateUrl`.  
+
+Afterwards, set `TEST_MODE` back to `0`, upload again, and remove the test rows with **Clear log** on the web page.  
+
 ##  
 
 <a href="https://www.youtube.com/watch?v=f61Pw1ZjPyw"><img src=https://user-images.githubusercontent.com/32169384/139599643-c06efdc9-39f7-4c51-9084-7b14ee37d968.png></a>
