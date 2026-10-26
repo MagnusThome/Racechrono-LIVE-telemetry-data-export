@@ -22,7 +22,7 @@ These steps are for `full_example`: the sketch is in `full_example/arduino` and 
 You need:  
 - An ESP32 board, for example a RejsaCAN board.  
 - RaceChrono on your phone.  
-- WiFi for the ESP32 at the track, for example a phone hotspot on the phone you are running Racechrono on in the car.  
+- WiFi for the ESP32 at the track, preferably a phone hotspot on the phone you are running Racechrono on in the car.  
 - A web server with PHP 7.4 or newer.  
 
 ## 1. Choose a secret key  
