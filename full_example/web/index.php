@@ -23,7 +23,7 @@ $logFile = __DIR__ . '/data/datalog.csv';
 date_default_timezone_set($timezone);
 
 $csvFile        = $logFile;
-$refreshSeconds = 5;   // set to 0 to disable auto-refresh
+$refreshSeconds = 2;   // set to 0 to disable auto-refresh
 $columnCount    = 7;
 
 // ---------------------------------------------------------------------------
