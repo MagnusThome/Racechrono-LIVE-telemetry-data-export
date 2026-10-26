@@ -14,6 +14,8 @@ The ESP32 asks RaceChrono for engine oil temperature, coolant temperature and th
 
 # Install  
 
+These steps are for `full_example`: the sketch is in `full_example/arduino` and the web files in `full_example/web`.  
+
 You need:  
 - An ESP32 board, for example a RejsaCAN board.  
 - RaceChrono on your phone.  
@@ -26,7 +28,7 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
 
 ## 2. Web server  
 
-1. Copy `update.php`, `index.php` and `config.php` to a folder on your web server. The web server only needs to read these files, so don't give it write access to that folder.  
+1. Copy `update.php`, `index.php` and `config.php` from `full_example/web` to a folder on your web server. The web server only needs to read these files, so don't give it write access to that folder.  
 2. Create a separate folder for the log file and make it writable by the web server. Put it outside the web root if you can, so the log can't be downloaded directly. For example, on Linux with Apache or nginx running as `www-data`:  
    ```
    mkdir /home/me/racechrono-data
@@ -41,7 +43,7 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
 ## 3. ESP32  
 
 1. In the Arduino IDE, install the ESP32 boards (Boards Manager → "esp32" by Espressif) and the library **NimBLE-Arduino version 2.x** (Library Manager). Version 1.x will not compile.  
-2. Open `main/main.ino` and edit `main/config.h`:  
+2. Open `full_example/arduino/arduino.ino` and edit `full_example/arduino/config.h`:  
    - `ssid` and `password`: the WiFi the ESP32 should use.  
    - `updateUrl`: the web address of `update.php`, for example `http://www.example.com/racechrono/update.php`. The key is sent as part of this address, so use `https://` if your server supports it.  
    - `uploadKey`: your key, the same as `$secretKey` in `config.php`.  
@@ -56,7 +58,7 @@ The temperatures come from RaceChrono's OBD-II connection, so RaceChrono also ne
 
 ## 5. Test without driving  
 
-Set `#define TEST_MODE 1` in `main/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
+Set `#define TEST_MODE 1` in `full_example/arduino/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
 - **200**: stored. The row appears on the web page with a TEST tag.  
 - **403**: the keys in `config.h` and `config.php` don't match.  
 - **500**: the server can't write to `$dataDir`.  

@@ -3,7 +3,7 @@
  * Settings shared by update.php and index.php.
  */
 
-// Shared secret. The device sends it with every lap (uploadKey in main.ino) and
+// Shared secret. The device sends it with every lap (uploadKey in arduino/config.h) and
 // the Clear log button asks for it. Letters and digits only. Nothing is
 // accepted while it is still the placeholder.
 $secretKey = 'xxxxxxxxxxxxxxxx';
