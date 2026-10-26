@@ -9,6 +9,7 @@
  *   key (required, must match $secretKey in config.php)
  *   engine_oil_temp, coolant_temp, prev_lap_number, prev_lap_time (optional)
  *   test (optional, 1 for a lap made by the device's test mode)
+ *   fuel_level (optional, tank level in %, 0-100)
  *
  * Column order is fixed, so every row gets the same number of fields even when
  * a sensor (or the lap timer) has nothing to report yet. Empty means "no value".
@@ -27,7 +28,8 @@ if (!hash_equals($secretKey, isset($_GET['key']) ? (string) $_GET['key'] : '')) 
     exit;
 }
 
-$columns = ['engine_oil_temp', 'coolant_temp', 'prev_lap_number', 'prev_lap_time', 'test'];
+// New columns go at the end, so rows already in the log keep their layout.
+$columns = ['engine_oil_temp', 'coolant_temp', 'prev_lap_number', 'prev_lap_time', 'test', 'fuel_level'];
 
 // The timestamp is in $timezone, set in config.php.
 $row      = [date('Ymd H:i:s')];

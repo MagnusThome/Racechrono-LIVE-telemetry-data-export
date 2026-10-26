@@ -10,7 +10,7 @@ The list of data that you can get live from Racechrono is huge! Any OBD2 data, a
 
 RaceChrono (phone) → Bluetooth LE → ESP32 → WiFi → `update.php` on your web server → `datalog.csv` → `index.php` web page.  
 
-The ESP32 asks RaceChrono for engine oil temperature, coolant temperature and the number and time of the last completed lap. Each time a lap is completed, it uploads one row. Laps are queued on the device and retried until the server has accepted them, so a WiFi dropout only delays them. The web page shows the laps, newest first, and refreshes itself every few seconds.  
+The ESP32 asks RaceChrono for engine oil temperature, coolant temperature, fuel tank level (in %) and the number and time of the last completed lap. Each time a lap is completed, it uploads one row. Laps are queued on the device and retried until the server has accepted them, so a WiFi dropout only delays them. The web page shows the laps, newest first, and refreshes itself every few seconds.  
 
 <img width="500" height="825" alt="image" src="https://github.com/user-attachments/assets/1d703923-10c7-408e-b2a5-afd69288ff40" />
 
@@ -67,11 +67,11 @@ The backtrace goes `setup()` → `NimBLEDevice::init()` → `esp_bt_controller_i
 
 Add the ESP32 as a DIY Bluetooth device in RaceChrono's device settings. It shows up as **RC DIY #xxxx**, where xxxx is the end of the board's Bluetooth address. When RaceChrono connects, the Serial Monitor prints `Configuring... Done`.  
 
-The temperatures come from RaceChrono's OBD-II connection, so RaceChrono also needs an OBD-II reader connected to the car. Lap numbers and times need lap timing on a track in RaceChrono.  
+The temperatures and the fuel level come from RaceChrono's OBD-II connection, so RaceChrono also needs an OBD-II reader connected to the car. Not every car reports the fuel level over OBD-II; if yours doesn't, the fuel field stays empty. Lap numbers and times need lap timing on a track in RaceChrono.  
 
 ## 5. Test without driving  
 
-Set `#define TEST_MODE 1` in `full_example/arduino/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
+Set `#define TEST_MODE 1` in `full_example/arduino/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and fuel level and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
 - **200**: stored. The row appears on the web page with a TEST tag.  
 - **403**: the keys in `config.h` and `config.php` don't match.  
 - **500**: the server can't write to the `data` folder.  

@@ -19,6 +19,8 @@ struct strmon monitors[] = {
     // lap_time would be the lap in progress, which counts up as you drive.
     {"previous_lap_number", "channel(device(lap), previous_lap_number)",      1.0},
     {"previous_lap_time",   "channel(device(lap), previous_lap_time)*100.0",  0.01},
+    // Fuel tank level, 0-100 %. Sent as tenths, since values arrive as integers.
+    {"fuel_level",      "channel(device(obd), fuel_level)*10.0",  0.1},
 };
 
 enum MonitorIndex {
@@ -26,9 +28,10 @@ enum MonitorIndex {
     MON_COOLANT_TEMP,
     MON_PREVIOUS_LAP_NUMBER,
     MON_PREVIOUS_LAP_TIME,
+    MON_FUEL_LEVEL,
 };
 
-static_assert(sizeof monitors / sizeof monitors[0] == 4, "MonitorIndex must match the monitors array");
+static_assert(sizeof monitors / sizeof monitors[0] == 5, "MonitorIndex must match the monitors array");
 
 
 #define BUFFSIZE 500
@@ -121,6 +124,7 @@ static void queueLap() {
   appendQuery(query, QUERY_SIZE, "coolant_temp",    MON_COOLANT_TEMP,        1);
   appendQuery(query, QUERY_SIZE, "prev_lap_number", MON_PREVIOUS_LAP_NUMBER, 0);
   appendQuery(query, QUERY_SIZE, "prev_lap_time",   MON_PREVIOUS_LAP_TIME,   2);
+  appendQuery(query, QUERY_SIZE, "fuel_level",      MON_FUEL_LEVEL,          1);
 }
 
 
@@ -279,18 +283,20 @@ static void watchTestLaps(boolean appReady) {
   char* query = newPendingLap();
   appendQuery(query, QUERY_SIZE, "engine_oil_temp", MON_ENGINE_OIL_TEMP, 1);
   appendQuery(query, QUERY_SIZE, "coolant_temp",    MON_COOLANT_TEMP,    1);
+  appendQuery(query, QUERY_SIZE, "fuel_level",      MON_FUEL_LEVEL,      1);
   const size_t used = strlen(query);
   snprintf(query + used, QUERY_SIZE - used, "%sprev_lap_number=%lu&prev_lap_time=%.2f&test=1",
            used == 0 ? "" : "&", (unsigned long) testLapNumber, elapsed / 1000.0);
 
   // What has arrived from the app so far. "-" means nothing yet: check the OBD
-  // connection for the temperatures; the lap values only come once RaceChrono
-  // has timed a real lap.
+  // connection for the temperatures and fuel; the lap values only come once
+  // RaceChrono has timed a real lap.
   Serial.print("Test lap ");
   Serial.print(testLapNumber);
   Serial.print(" queued. From the app:");
   printMonitor(" oil=",     MON_ENGINE_OIL_TEMP,     1);
   printMonitor(" coolant=", MON_COOLANT_TEMP,        1);
+  printMonitor(" fuel=",    MON_FUEL_LEVEL,          1);
   printMonitor(" lap=",     MON_PREVIOUS_LAP_NUMBER, 0);
   printMonitor(" laptime=", MON_PREVIOUS_LAP_TIME,   2);
   Serial.println();

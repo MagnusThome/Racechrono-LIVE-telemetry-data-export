@@ -12,6 +12,7 @@
  *   3: previous lap number   (last completed lap)
  *   4: previous lap time     (last completed lap, seconds)
  *   5: test                  (1 for a lap made by the device's test mode)
+ *   6: fuel_level            (tank level in %, 0-100)
  *
  * Older rows may have fewer columns; they are padded so everything lines up.
  */
@@ -23,7 +24,7 @@ date_default_timezone_set($timezone);
 
 $csvFile        = $logFile;
 $refreshSeconds = 5;   // set to 0 to disable auto-refresh
-$columnCount    = 6;
+$columnCount    = 7;
 
 // ---------------------------------------------------------------------------
 // Actions. Handled before any output, then redirected back to a clean GET so
@@ -137,6 +138,14 @@ function fmt_temp(string $value): string
     return is_numeric(trim($value)) ? $cell . '&nbsp;°C' : $cell;
 }
 
+/** Fuel tank level as a whole percentage, "45 %"; a missing value stays a dash. */
+function fmt_percent(string $value): string
+{
+    $cell = fmt_cell($value);
+
+    return is_numeric(trim($value)) ? $cell . '&nbsp;%' : $cell;
+}
+
 function e(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
@@ -151,6 +160,30 @@ function is_test_row(array $row): bool
 // Each row is one completed lap. Rows from before the logger was changed to
 // lap-only have empty lap fields and are shown with a dash.
 $displayRows = array_reverse($rows, true);   // newest first, original indexes kept
+
+// The measured values on each card. One that is empty in every lap in the log,
+// for example on a car that never reports its oil temperature, is left out of
+// all cards; one that is only missing now and then shows a dash, so the cards
+// don't change shape from lap to lap.
+$fields = [
+    'oil'     => ['col' => 1, 'label' => 'Oil',     'head' => 'Engine oil temp', 'fmt' => 'fmt_temp'],
+    'coolant' => ['col' => 2, 'label' => 'Coolant', 'head' => 'Coolant temp',    'fmt' => 'fmt_temp'],
+    'fuel'    => ['col' => 6, 'label' => 'Fuel',    'head' => 'Fuel',            'fmt' => 'fmt_percent'],
+];
+$fields = array_filter($fields, function (array $field) use ($rows): bool {
+    foreach ($rows as $row) {
+        if (trim($row[$field['col']]) !== '') {
+            return true;
+        }
+    }
+    return false;
+});
+
+// Card grid built from the fields that are left: lap number and lap time on
+// top, then one column per field and the time logged.
+$gridCols  = max(count($fields), 1) + 1;
+$gridAreas = '"' . str_repeat('lap ', $gridCols - 1) . 'laptime" '
+           . '"' . ($fields ? implode(' ', array_keys($fields)) : '.') . ' when"';
 
 $banner = '';
 $bannerClass = 'ok';
@@ -284,10 +317,9 @@ if (isset($_GET['cleared'])) {
     }
     tbody tr {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-areas:
-            "lap     lap     laptime"
-            "oil     coolant when";
+        /* Set on the table from the fields that have data, see $gridAreas. */
+        grid-template-columns: repeat(var(--cols), 1fr);
+        grid-template-areas: var(--areas);
         gap: 6px 12px;
         align-items: end;
         padding: 12px 14px;
@@ -315,6 +347,7 @@ if (isset($_GET['cleared'])) {
     }
     td.c-oil     { grid-area: oil; }
     td.c-coolant { grid-area: coolant; }
+    td.c-fuel    { grid-area: fuel; }
     td.c-when    { grid-area: when; text-align: right; font-size: .8rem; color: var(--muted); }
     td[data-label]::before {
         content: attr(data-label);
@@ -385,13 +418,14 @@ if (isset($_GET['cleared'])) {
         The ESP32 posts to <code>update.php</code> when a lap finishes, which appends one row to <code>datalog.csv</code>.
     </div>
 <?php else: ?>
-    <table>
+    <table style="--cols: <?= (int) $gridCols ?>; --areas: <?= e($gridAreas) ?>;">
         <thead>
             <tr>
                 <th>Lap</th>
                 <th>Lap time</th>
-                <th>Engine oil temp</th>
-                <th>Coolant temp</th>
+<?php foreach ($fields as $field): ?>
+                <th><?= e($field['head']) ?></th>
+<?php endforeach; ?>
                 <th>Time</th>
             </tr>
         </thead>
@@ -400,8 +434,9 @@ if (isset($_GET['cleared'])) {
             <tr>
                 <td class="c-lap"><?= fmt_cell($row[3]) ?><?php if (is_test_row($row)): ?><span class="tag">test</span><?php endif; ?></td>
                 <td class="c-laptime"><?= trim($row[4]) === '' ? '—' : e(fmt_lap_time($row[4])) ?></td>
-                <td class="c-oil" data-label="Oil"><?= fmt_temp($row[1]) ?></td>
-                <td class="c-coolant" data-label="Coolant"><?= fmt_temp($row[2]) ?></td>
+<?php foreach ($fields as $area => $field): ?>
+                <td class="c-<?= $area ?>" data-label="<?= e($field['label']) ?>"><?= $field['fmt']($row[$field['col']]) ?></td>
+<?php endforeach; ?>
                 <td class="c-when" data-label="Time"><?= e(fmt_time($row[0])) ?></td>
             </tr>
 <?php endforeach; ?>
