@@ -48,8 +48,36 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
    - `ssid` and `password`: the WiFi the ESP32 should use.  
    - `updateUrl`: the web address of `update.php`, for example `http://www.example.com/racechrono/update.php`. The key is sent as part of this address, so use `https://` if your server supports it.  
    - `uploadKey`: your key, the same as `$secretKey` in `config.php`.  
-3. Select your board under Tools → Board. On a plain ESP32 the sketch fills almost all of the default program space, so also choose Tools → Partition Scheme → **Huge APP**.  
+3. Select your board under Tools → Board, for example **ESP32S3 Dev Module** or **ESP32 Dev Module**. WiFi and Bluetooth together fill almost all of the default program space (about 95% on ESP32-S3, over 100% on a plain ESP32), so also choose Tools → Partition Scheme → **Huge APP**.  
 4. Upload, and open the Serial Monitor at 115200 baud to follow what the device does.  
+
+### ESP32 core 4.0.0-RC1 on ESP32-S3: NimBLE fix  
+
+With ESP32 core 4.0.0-RC1, ESP32-S3 builds stop with this error inside NimBLE-Arduino (2.5.2 and earlier):  
+
+```
+ble_hs_periodic_sync.c:58:24: error: 'struct ble_npl_event' has no member named 'event'
+```
+
+The error is in the library, not in this project: RC1 turns on Bluetooth 5 periodic sync for the S3, and that code in NimBLE-Arduino does not compile for the S3. Until a NimBLE-Arduino release fixes it, edit `NimBLE-Arduino/src/nimble/nimble/host/src/ble_hs_periodic_sync.c` in your Arduino libraries folder and replace these two lines near line 58:  
+
+```c
+    if((psync->lost_ev).event != NULL)
+        ble_npl_event_deinit(&psync->lost_ev);
+```
+
+with:  
+
+```c
+#if CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT
+    if((psync->lost_ev).event != NULL)
+        ble_npl_event_deinit(&psync->lost_ev);
+#else
+    ble_npl_event_deinit(&psync->lost_ev);
+#endif
+```
+
+Updating NimBLE-Arduino in the Library Manager overwrites this change, so check again after an update. Plain ESP32 boards and older cores do not need it.  
 
 ## 4. RaceChrono  
 
