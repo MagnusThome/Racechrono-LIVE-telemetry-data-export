@@ -29,14 +29,15 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
 ## 2. Web server  
 
 1. Copy `update.php`, `index.php` and `config.php` from `full_example/web` to a folder on your web server. The web server only needs to read these files, so don't give it write access to that folder.  
-2. Create a separate folder for the log file and make it writable by the web server. Put it outside the web root if you can, so the log can't be downloaded directly. For example, on Linux with Apache or nginx running as `www-data`:  
+2. Create a separate folder for the log file and make it writable by the web server. By default `config.php` uses a folder named `data` inside the folder with the PHP files (`__DIR__ . '/data'`), so the simplest setup is to create that subfolder:  
    ```
-   mkdir /home/me/racechrono-data
-   sudo chown www-data /home/me/racechrono-data
+   mkdir /var/www/html/racechrono/data
+   sudo chown www-data /var/www/html/racechrono/data
    ```
+   (here the PHP files are in `/var/www/html/racechrono`, and Apache or nginx runs as `www-data`). A folder outside the web root is safer, because the log then can't be downloaded directly, for example `/home/me/racechrono-data`. In that case set `$dataDir` to it in the next step.  
 3. Edit `config.php`:  
    - `$secretKey`: your key. Nothing is accepted while it is still `xxxxxxxxxxxxxxxx`.  
-   - `$dataDir`: the server path of the log folder, for example `/home/me/racechrono-data`. This is a path on the server's disk, not a URL.  
+   - `$dataDir`: the server path of the log folder. Leave it as `__DIR__ . '/data'` for the default `data` subfolder, or set a full path such as `/home/me/racechrono-data`. This is a path on the server's disk, not a URL.  
    - `$timezone`: the timezone for the timestamps in the log, for example `Europe/Stockholm`.  
 4. Open `index.php` in a browser. It should say that no laps have been logged yet.  
 
