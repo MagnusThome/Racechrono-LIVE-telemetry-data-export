@@ -28,16 +28,14 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
 
 ## 2. Web server  
 
-1. Copy `update.php`, `index.php` and `config.php` from `full_example/web` to a folder on your web server. The web server only needs to read these files, so don't give it write access to that folder.  
-2. Create a separate folder for the log file and make it writable by the web server. By default `config.php` uses a folder named `data` inside the folder with the PHP files (`__DIR__ . '/data'`), so the simplest setup is to create that subfolder:  
+1. Copy `update.php`, `index.php` and `config.php` from `full_example/web` to a folder on your web server. Only `config.php` holds settings; the other two need no editing. The web server only needs to read these files, so don't give it write access to that folder.  
+2. Next to the PHP files, create a subfolder named `data` for the log file, and make it writable by the web server. For example, with the PHP files in `/var/www/html/racechrono` and Apache or nginx running as `www-data`:  
    ```
    mkdir /var/www/html/racechrono/data
    sudo chown www-data /var/www/html/racechrono/data
    ```
-   (here the PHP files are in `/var/www/html/racechrono`, and Apache or nginx runs as `www-data`). A folder outside the web root is safer, because the log then can't be downloaded directly, for example `/home/me/racechrono-data`. In that case set `$dataDir` to it in the next step.  
 3. Edit `config.php`:  
-   - `$secretKey`: your key. Nothing is accepted while it is still `xxxxxxxxxxxxxxxx`.  
-   - `$dataDir`: the server path of the log folder. Leave it as `__DIR__ . '/data'` for the default `data` subfolder, or set a full path such as `/home/me/racechrono-data`. This is a path on the server's disk, not a URL.  
+   - `$secretKey`: your key.  
    - `$timezone`: the timezone for the timestamps in the log, for example `Europe/Stockholm`.  
 4. Open `index.php` in a browser. It should say that no laps have been logged yet.  
 
@@ -73,7 +71,7 @@ The temperatures come from RaceChrono's OBD-II connection, so RaceChrono also ne
 Set `#define TEST_MODE 1` in `full_example/arduino/config.h` and upload again. While RaceChrono is connected, the device then makes a test lap every 20 seconds, with the live temperatures and a made-up lap number and time, and uploads it like a real lap. The Serial Monitor shows each test lap and the server's answer:  
 - **200**: stored. The row appears on the web page with a TEST tag.  
 - **403**: the keys in `config.h` and `config.php` don't match.  
-- **500**: the server can't write to `$dataDir`.  
+- **500**: the server can't write to the `data` folder.  
 - **-1** or another negative number: no connection to the server. Check the WiFi details and `updateUrl`.  
 
 Afterwards, set `TEST_MODE` back to `0`, upload again, and remove the test rows with **Clear log** on the web page.  

@@ -1,7 +1,7 @@
 <?php
 /**
  * Receives one completed lap from the ESP32 and appends it to datalog.csv in
- * $dataDir (config.php).
+ * the data subfolder.
  *
  * The device calls this once per finished lap, so each row is one lap.
  *
@@ -18,7 +18,10 @@
 
 require __DIR__ . '/config.php';
 
-if (!key_is_valid(isset($_GET['key']) ? (string) $_GET['key'] : '')) {
+$logFile = __DIR__ . '/data/datalog.csv';
+date_default_timezone_set($timezone);
+
+if (!hash_equals($secretKey, isset($_GET['key']) ? (string) $_GET['key'] : '')) {
     http_response_code(403);
     echo "bad key";
     exit;
@@ -53,7 +56,7 @@ if (!$hasValue) {
 // The server path only goes to the server's error log, not to the client.
 $fp = @fopen($logFile, 'a');
 if ($fp === false || !flock($fp, LOCK_EX)) {
-    error_log('update.php: could not write ' . $logFile . ', check that $dataDir exists and is writable');
+    error_log('update.php: could not write ' . $logFile . ', check that the data folder exists and is writable');
     http_response_code(500);
     echo "could not write datalog.csv";
     exit;

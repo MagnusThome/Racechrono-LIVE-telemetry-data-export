@@ -18,7 +18,10 @@
 
 require __DIR__ . '/config.php';
 
-$csvFile        = $logFile;   // in $dataDir, see config.php
+$logFile = __DIR__ . '/data/datalog.csv';
+date_default_timezone_set($timezone);
+
+$csvFile        = $logFile;
 $refreshSeconds = 5;   // set to 0 to disable auto-refresh
 $columnCount    = 6;
 
@@ -32,7 +35,7 @@ $action = $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])
 
 if ($action === 'clear') {
     $confirmed = isset($_POST['confirm']) && $_POST['confirm'] === 'yes';
-    $keyOk     = $confirmed && key_is_valid(isset($_POST['key']) ? (string) $_POST['key'] : '');
+    $keyOk     = $confirmed && hash_equals($secretKey, isset($_POST['key']) ? (string) $_POST['key'] : '');
     $ok        = false;
     if ($keyOk) {
         // Truncates in place (creating the file if absent) under an exclusive lock.
@@ -158,7 +161,7 @@ if (isset($_GET['cleared'])) {
         $banner      = 'Wrong key, the log was not cleared.';
         $bannerClass = 'err';
     } else {
-        $banner      = 'Could not clear the log file — check that $dataDir in config.php exists and is writable.';
+        $banner      = 'Could not clear the log file — check that the data folder exists and is writable.';
         $bannerClass = 'err';
     }
 }
@@ -183,7 +186,10 @@ if (isset($_GET['cleared'])) {
     }
     * { box-sizing: border-box; }
     body {
-        margin: 0;
+        /* A centred column, so a lap card is not stretched across a wide
+           screen. */
+        max-width: 688px;
+        margin: 0 auto;
         padding: 24px;
         background: var(--bg);
         color: var(--text);
@@ -262,52 +268,84 @@ if (isset($_GET['cleared'])) {
     }
     .banner.ok  { background: rgba(52, 199, 89, .12); border-color: rgba(52, 199, 89, .35); color: #7ee794; }
     .banner.err { background: rgba(255, 69, 58, .12); border-color: rgba(255, 69, 58, .35); color: #ff8a80; }
-    .table-wrap {
+    /* One card per lap in a single column, newest at the top, on every
+       screen. Lap number and a large lap time on top, oil, coolant and the
+       time logged below. The page itself scrolls, not an inner box. */
+    table {
+        display: block;
+        width: 100%;
+        font-variant-numeric: tabular-nums;
+    }
+    thead { display: none; }
+    tbody {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    tbody tr {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-areas:
+            "lap     lap     laptime"
+            "oil     coolant when";
+        gap: 6px 12px;
+        align-items: end;
+        padding: 12px 14px;
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 10px;
-        overflow: auto;
-        max-height: calc(100vh - 190px);
     }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-variant-numeric: tabular-nums;
-    }
-    thead th {
-        position: sticky;
-        top: 0;
-        background: #222834;
-        text-align: right;
-        font-size: .75rem;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--muted);
-        font-weight: 600;
-        padding: 10px 16px;
-        border-bottom: 1px solid var(--line);
-        white-space: nowrap;
-    }
-    tbody td {
-        padding: 8px 16px;
-        border-bottom: 1px solid rgba(43, 50, 61, .6);
-        font-size: .9rem;
-        white-space: nowrap;
-        text-align: right;
-    }
-    tbody tr:nth-child(even) { background: rgba(255, 255, 255, .015); }
-    tbody tr:hover { background: rgba(77, 163, 255, .07); }
+    tbody tr:first-child { border-color: rgba(77, 163, 255, .55); }
     tbody tr:first-child td { color: var(--accent); font-weight: 600; }
+    tbody td {
+        font-size: .9rem;
+        text-align: left;
+    }
+    td.c-lap { grid-area: lap; font-size: 1rem; }
+    td.c-lap::before {
+        content: "Lap ";
+        color: var(--muted);
+        font-weight: 400;
+    }
+    td.c-laptime {
+        grid-area: laptime;
+        text-align: right;
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+    td.c-oil     { grid-area: oil; }
+    td.c-coolant { grid-area: coolant; }
+    td.c-when    { grid-area: when; text-align: right; font-size: .8rem; color: var(--muted); }
+    td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
     .empty {
         padding: 48px 16px;
         text-align: center;
         color: var(--muted);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
     }
     .empty code {
         background: #222834;
         padding: 2px 6px;
         border-radius: 4px;
         font-size: .85em;
+    }
+
+    /* Phones: a little less space around the page. */
+    @media (max-width: 600px) {
+        body { padding: 16px; }
+        h1 { font-size: 1.15rem; }
+        /* iOS zooms into inputs with text smaller than 16px. */
+        .confirm input { font-size: 16px; }
     }
 </style>
 </head>
@@ -360,11 +398,11 @@ if (isset($_GET['cleared'])) {
         <tbody>
 <?php foreach ($displayRows as $index => $row): ?>
             <tr>
-                <td><?php if (is_test_row($row)): ?><span class="tag">test</span> <?php endif; ?><?= fmt_cell($row[3]) ?></td>
-                <td><?= trim($row[4]) === '' ? '—' : e(fmt_lap_time($row[4])) ?></td>
-                <td><?= fmt_temp($row[1]) ?></td>
-                <td><?= fmt_temp($row[2]) ?></td>
-                <td><?= e(fmt_time($row[0])) ?></td>
+                <td class="c-lap"><?= fmt_cell($row[3]) ?><?php if (is_test_row($row)): ?><span class="tag">test</span><?php endif; ?></td>
+                <td class="c-laptime"><?= trim($row[4]) === '' ? '—' : e(fmt_lap_time($row[4])) ?></td>
+                <td class="c-oil" data-label="Oil"><?= fmt_temp($row[1]) ?></td>
+                <td class="c-coolant" data-label="Coolant"><?= fmt_temp($row[2]) ?></td>
+                <td class="c-when" data-label="Time"><?= e(fmt_time($row[0])) ?></td>
             </tr>
 <?php endforeach; ?>
         </tbody>
