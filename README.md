@@ -4,7 +4,7 @@ An example how to use the "Monitor" API in Racechrono to get a live feed of data
   
 # Data to display   
 
-The list of data that you can get live from Racechrono is huge! Any OBD2 data, any laptiming data, GPS, CAN, yeah ANY data Racechrono collects is available to collect live over BLE Bluetooth while out on the track. This specific code example will upload data to a web server which then can be viewed in the pits. Or you can add your own code to locally drive a display or issue an alarm that goes of in the car or in the pits if the oil or tire temps are too high? An automatic email sent to your friends each time you set a new track PB ;-) The possibilities are endless.  
+The list of data that you can get live from Racechrono is huge! Any OBD2 data, any laptiming data, GPS, CAN, yeah ANY data Racechrono collects is available to collect live over BLE Bluetooth while out on the track. This specific code example will upload data to a web server which then can be viewed in the pits. Or you can add your own code to locally drive a display, issue an alarm that goes of in the car or in the pits if the oil or tire temps are too high? An automatic email sent to your friends each time you set a new track PB ;-) The possibilities are endless.  
 
 # How this example works  
 
