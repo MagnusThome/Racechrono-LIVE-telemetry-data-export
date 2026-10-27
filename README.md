@@ -1,16 +1,16 @@
 # Racechrono-LIVE-telemetry-data-export  
 
-An example how to use the "Monitor" API in Racechrono to get a live feed of data Racechrono holds using any board based on an ESP32 to get a live feed of data from Racechrono over BLE/Bluetooth.
+An example how to use the "Monitor" API in Racechrono to get a live feed of data by using a cheap ESP32 board. 
   
 # Data to display   
 
-The list of data that you can get live from Racechrono is huge! Any OBD2 data, any laptiming data, GPS, CAN, yeah ANY data Racechrono collects is available to collect live over BLE Bluetooth while out on the track. This specific example code will upload data to a web server. It's easy to add any of all the data available. Then add your code for what to do with the data/information. Show for example drive train vitals and the current sector times on a large screen in the pits? Or issue an alarm that goes of in the car or in the pits if the oil or tire temps are too high? An automatic email sent to your friends each time you set a new track PB hehehe. The possibilities are endless.  
+The list of data that you can get live from Racechrono is huge! Any OBD2 data, any laptiming data, GPS, CAN, yeah ANY data Racechrono collects is available to collect live over BLE Bluetooth while out on the track. This specific code example will upload data to a web server which then can be viewed in the pits. Or you can add your own code to locally drive a display or issue an alarm that goes of in the car or in the pits if the oil or tire temps are too high? An automatic email sent to your friends each time you set a new track PB ;-) The possibilities are endless.  
 
-# How it works  
+# How this example works  
 
 RaceChrono (phone) → Bluetooth LE → ESP32 → WiFi (phone hotspot) → `update.php` on your web server → `datalog.csv` → `index.php` web page.  
 
-The ESP32 asks RaceChrono for engine oil temperature, coolant temperature, fuel tank level (in %) and the number and time of the last completed lap. Each time a lap is completed, it uploads one row. Laps are queued on the device and retried until the server has accepted them, so a WiFi dropout only delays them. The web page shows the laps, newest first, and refreshes itself every few seconds.  
+The ESP32 asks RaceChrono for engine oil temperature, coolant temperature, fuel tank level (in %), the lap number, lap time and time of the last completed lap. Each time a lap is completed, it uploads one row. The web page shows the laps, newest first, and refreshes itself every few seconds.  
 
 <img width="725" height="734" alt="image" src="https://github.com/user-attachments/assets/fdcbd169-c9ba-46d8-ac19-62d8b3bb9471" />
 
@@ -19,9 +19,9 @@ The ESP32 asks RaceChrono for engine oil temperature, coolant temperature, fuel 
 These steps are for `full_example`: the sketch is in `full_example/arduino` and the web files in `full_example/web`.  
 
 You need:  
-- An ESP32 board, for example a RejsaCAN board.  
+- An ESP32 or ESPS32-S3 board 
 - RaceChrono on your phone.  
-- WiFi with internet access for the ESP32. Normally this is the WiFi hotspot on the phone that runs RaceChrono. The phone rides along in the car, so the ESP32 has a stable WiFi connection and internet access the whole time you drive, also out on the track, where the pit WiFi doesn't reach.  
+- WiFi with internet access for the ESP32. Normally this is the WiFi hotspot on the phone that runs RaceChrono. The phone rides along in the car, so the ESP32 has a stable WiFi connection and internet access the whole time you drive.  
 - A web server with PHP 7.4 or newer.  
 
 ## 1. Choose a secret key  
@@ -49,18 +49,11 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
    - `updateUrl`: the web address of `update.php`, for example `http://www.example.com/racechrono/update.php`. The key is sent as part of this address, so use `https://` if your server supports it.  
    - `uploadKey`: your key, the same as `$secretKey` in `config.php`.  
 3. Select your board under Tools → Board, for example **ESP32S3 Dev Module** or **ESP32 Dev Module**. WiFi and Bluetooth together fill almost all of the default program space (over 90% on ESP32-S3, about 100% on a plain ESP32), so also choose Tools → Partition Scheme → **Huge APP**.  
-4. Upload, and open the Serial Monitor at 115200 baud to follow what the device does.  
+4. Compile and upload  
 
-### ESP32 core version  
+### ESP32 board library version  
 
-Use the stable **3.3.x** release of the ESP32 boards. Do not use **4.0.0-RC1** (or the 4.0 alphas) on an ESP32-S3 for now: with NimBLE-Arduino 2.5.2 the board crashes and reboots over and over, about a second after power-on, inside the Bluetooth controller's own startup code:  
-
-```
-Guru Meditation Error: Core  / panic'ed (Cache error).
-MMU entry fault error
-```
-
-The backtrace goes `setup()` → `NimBLEDevice::init()` → `esp_bt_controller_init()`, so it happens before this project's code does anything. With RC1, S3 builds also fail to compile in NimBLE-Arduino (`'struct ble_npl_event' has no member named 'event'` in `ble_hs_periodic_sync.c`). Fixing that line by hand only gets it to build; the crash remains. Both are version mismatches between the 4.0 core and NimBLE-Arduino 2.x, which is made for the 3.x cores. Check again once NimBLE-Arduino supports core 4.0.  
+Use the stable **3.3.x** release of the ESP32 boards. Do not use **4.0.0-RC1** (or the 4.0 alphas) on an ESP32-S3 for now, with NimBLE-Arduino 2.5.2 the board crashes and reboots over and over. Updated later 4.x versions might fix this. 
 
 ## 4. RaceChrono  
 
