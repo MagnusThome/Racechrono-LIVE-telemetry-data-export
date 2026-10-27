@@ -21,7 +21,7 @@ These steps are for `full_example`: the sketch is in `full_example/arduino` and 
 You need:  
 - An ESP32 board, for example a RejsaCAN board.  
 - RaceChrono on your phone.  
-- WiFi for the ESP32 at the track, preferably a phone hotspot on the phone you are running Racechrono on in the car.  
+- WiFi with internet access for the ESP32. Normally this is the WiFi hotspot on the phone that runs RaceChrono. The phone rides along in the car, so the ESP32 has a stable WiFi connection and internet access the whole time you drive, also out on the track, where the pit WiFi doesn't reach.  
 - A web server with PHP 7.4 or newer.  
 
 ## 1. Choose a secret key  
@@ -45,7 +45,7 @@ Pick a key of letters and digits only. The device sends it with every lap, and t
 
 1. In the Arduino IDE, install the ESP32 boards, version 3.3.x (Boards Manager → "esp32" by Espressif, see [ESP32 core version](#esp32-core-version) below) and the library **NimBLE-Arduino version 2.x** (Library Manager). Version 1.x will not compile.  
 2. Open `full_example/arduino/arduino.ino` and edit `full_example/arduino/config.h`:  
-   - `ssid` and `password`: the WiFi the ESP32 should use.  
+   - `ssid` and `password`: the WiFi the ESP32 should use, normally your phone's hotspot. Turn the hotspot on before you drive.  
    - `updateUrl`: the web address of `update.php`, for example `http://www.example.com/racechrono/update.php`. The key is sent as part of this address, so use `https://` if your server supports it.  
    - `uploadKey`: your key, the same as `$secretKey` in `config.php`.  
 3. Select your board under Tools → Board, for example **ESP32S3 Dev Module** or **ESP32 Dev Module**. WiFi and Bluetooth together fill almost all of the default program space (over 90% on ESP32-S3, about 100% on a plain ESP32), so also choose Tools → Partition Scheme → **Huge APP**.  
