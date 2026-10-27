@@ -66,7 +66,11 @@ The backtrace goes `setup()` → `NimBLEDevice::init()` → `esp_bt_controller_i
 
 Add the ESP32 as a DIY Bluetooth device in RaceChrono's device settings. It shows up as **RC DIY #xxxx**, where xxxx is the end of the board's Bluetooth address. When RaceChrono connects, the Serial Monitor prints `Configuring... Done`.  
 
-The temperatures and the fuel level come from RaceChrono's OBD-II connection, so RaceChrono also needs an OBD-II reader connected to the car. Not every car reports the fuel level over OBD-II; if yours doesn't, the fuel field stays empty. Lap numbers and times need lap timing on a track in RaceChrono.  
+The temperatures and the fuel level come from RaceChrono's OBD-II connection, so RaceChrono also needs an OBD-II reader connected to the car. Not every car reports the fuel level over OBD-II; if yours doesn't, the fuel field stays empty.  
+
+**Don't forget:** RaceChrono only reads the OBD-II channels you have turned on. In the settings for your OBD-II reader in RaceChrono, add the channels for engine oil temperature, coolant temperature and fuel level, if your car supports them. A channel that isn't turned on never reaches the ESP32, and that field stays empty on the web page.  
+
+Lap numbers and times need lap timing on a track in RaceChrono.  
 
 ## 5. Test without driving  
 
