@@ -8,7 +8,7 @@ The list of data that you can get live from Racechrono is huge! Any OBD2 data, a
 
 # How it works  
 
-RaceChrono (phone) → Bluetooth LE → ESP32 → WiFi → `update.php` on your web server → `datalog.csv` → `index.php` web page.  
+RaceChrono (phone) → Bluetooth LE → ESP32 → WiFi (phone hotspot) → `update.php` on your web server → `datalog.csv` → `index.php` web page.  
 
 The ESP32 asks RaceChrono for engine oil temperature, coolant temperature, fuel tank level (in %) and the number and time of the last completed lap. Each time a lap is completed, it uploads one row. Laps are queued on the device and retried until the server has accepted them, so a WiFi dropout only delays them. The web page shows the laps, newest first, and refreshes itself every few seconds.  
 
